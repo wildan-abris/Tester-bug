@@ -1,0 +1,43 @@
+name: Build WA Fuzzer APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        run: |
+          chmod +x gradlew || true
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.4
+          fi
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wa-fuzzer-v3-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload sample reports (if any)
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: fuzz-reports
+          path: app/build/reports/
